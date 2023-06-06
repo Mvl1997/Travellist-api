@@ -49,7 +49,10 @@ app.get("/sse", (req, res) => {
   };
 
   res.writeHead(200, headers);
-  const data = `data: ${JSON.stringify(stuff)}\n\n`;
+  const data = `data: ${JSON.stringify({
+    stuff,
+    nrOfClients: clients.length,
+  })}\n\n`;
   res.write(data);
 
   const client = {
@@ -61,23 +64,25 @@ app.get("/sse", (req, res) => {
     res: res,
   });
 
-  setInterval(() => {
-    if (clients.length > 0) {
-      res.write(`data: \n\n`);
-    }
-  }, 5000);
-
   req.on("close", () => {
     console.log(`Connection closed from ${client.name}.`);
     clients.splice(
       clients.findIndex((c) => c.time === client.time),
       1
     );
+    sendToAllClients();
   });
 });
 
 function sendToAllClients() {
-  clients.forEach((c) => c.res.write(`data: ${JSON.stringify(stuff)}\n\n`));
+  clients.forEach((c) =>
+    c.res.write(
+      `data: ${JSON.stringify({
+        stuff,
+        nrOfClients: clients.length,
+      })}\n\n`
+    )
+  );
 }
 
 app.listen("1234", function () {
